@@ -18,12 +18,12 @@ var app = builder.Build();
         app.MapScalarApiReference();
     }
 
-    // app.UseAuthentication();
-    // app.UseAuthorization();
-
     app.UseHttpsRedirection();
     app.UseRouting();
+    app.UseAuthentication();
+    app.UseAuthorization();
     app.MapControllers();
 }
 
+await app.Services.SeedRolesAsync();
 app.Run();

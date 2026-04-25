@@ -1,13 +1,14 @@
 using Domain.Common;
 using Domain.Enums;
+using Microsoft.AspNetCore.Identity;
 
 namespace Domain.Entities;
 
-public class User : BaseEntity
+public class User : IdentityUser<int>, IBaseAuditableEntity
 {
     public string Name { get; set; } = null!;
-    public string Email { get; set; } = null!;
     public UserRole Role { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     public ICollection<CourseOfferingStaff> CourseOfferingStaffs { get; set; } = [];
     public ICollection<Enrollment> Enrollments { get; set; } = [];

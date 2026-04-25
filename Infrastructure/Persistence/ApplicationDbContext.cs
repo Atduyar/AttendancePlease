@@ -1,18 +1,20 @@
 using Application.Common.Interfaces;
 using Domain.Entities;
 using Infrastructure.Persistence.Configuration;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence;
 
-public class ApplicationDbContext : DbContext, IApplicationDbContext
+public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, int>, IApplicationDbContext
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {
     }
 
-    public DbSet<User> Users => Set<User>();
+    public new DbSet<User> Users => Set<User>();
     public DbSet<Course> Courses => Set<Course>();
     public DbSet<Term> Terms => Set<Term>();
     public DbSet<CourseOffering> CourseOfferings => Set<CourseOffering>();
