@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Api.OpenApi;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,7 +22,7 @@ public static class ConfigureServices
             });
 
         services.AddEndpointsApiExplorer();
-        services.AddOpenApi();
+        services.AddOpenApi(OpenApiConfiguration.Configure);
         services.AddAuthorization();
 
         return services;
