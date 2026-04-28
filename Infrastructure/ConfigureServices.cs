@@ -34,7 +34,7 @@ public static class ConfigureServices
             }
         });
 
-        services.AddIdentity<User, IdentityRole<int>>(options =>
+        services.AddIdentityCore<User>(options =>
         {
             options.Password.RequireDigit = false;
             options.Password.RequiredLength = 6;
@@ -42,12 +42,15 @@ public static class ConfigureServices
             options.Password.RequireUppercase = false;
             options.Password.RequireLowercase = false;
         })
+        .AddRoles<IdentityRole<int>>()
         .AddEntityFrameworkStores<ApplicationDbContext>()
+        .AddSignInManager()
         .AddDefaultTokenProviders();
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
+                options.MapInboundClaims = false;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -56,7 +59,10 @@ public static class ConfigureServices
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = configuration["Jwt:Issuer"],
                     ValidAudience = configuration["Jwt:Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!))
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!)),
+                    ClockSkew = TimeSpan.FromMinutes(5),
+                    NameClaimType = "sub",
+                    RoleClaimType = "role"
                 };
             });
 
