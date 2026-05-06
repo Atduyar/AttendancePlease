@@ -23,6 +23,7 @@ var app = builder.Build();
     app.UseStatusCodePages();
     app.UseHttpsRedirection();
     app.UseRouting();
+    app.UseCors();
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();

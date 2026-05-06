@@ -26,6 +26,16 @@ public static class ConfigureServices
         services.AddProblemDetails();
         services.AddAuthorization();
 
+        services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(policy =>
+            {
+                policy.AllowAnyOrigin()
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+            });
+        });
+
         return services;
     }
 }
