@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
 
-[Authorize(Roles = "Admin")]
+[Authorize]
 public class EnrollmentsController : BaseController
 {
     [HttpPost]
@@ -32,6 +32,7 @@ public class EnrollmentsController : BaseController
     }
 
     [HttpGet]
+    [Authorize]
     public async Task<ActionResult<List<EnrollmentDto>>> List(
         [FromQuery] int? courseOfferingId,
         [FromQuery] int? userId,
@@ -42,6 +43,7 @@ public class EnrollmentsController : BaseController
     }
 
     [HttpGet("{id}")]
+    [Authorize]
     public async Task<ActionResult<EnrollmentDto>> Get(int id, CancellationToken cancellationToken)
     {
         var enrollment = await Mediator.Send(new GetEnrollmentQuery(id), cancellationToken);

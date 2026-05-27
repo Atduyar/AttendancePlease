@@ -7,7 +7,7 @@ using System.Security.Claims;
 
 namespace Api.Controllers;
 
-[Authorize(Roles = "Staff,Admin")]
+[Authorize]
 public class SessionsController : BaseController
 {
     [HttpPost]

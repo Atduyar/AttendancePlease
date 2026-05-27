@@ -11,7 +11,6 @@ namespace Api.Controllers;
 public class AttendancesController : BaseController
 {
     [HttpPost("mark")]
-    [Authorize(Roles = "Staff,Admin")]
     public async Task<ActionResult<AttendanceDto>> Mark(MarkAttendanceCommand command, CancellationToken cancellationToken)
     {
         var dto = await Mediator.Send(command, cancellationToken);
@@ -28,7 +27,6 @@ public class AttendancesController : BaseController
     }
 
     [HttpGet("session/{sessionId}")]
-    [Authorize(Roles = "Staff,Admin")]
     public async Task<ActionResult<List<AttendanceDto>>> ListBySession(int sessionId, CancellationToken cancellationToken)
     {
         var attendances = await Mediator.Send(new ListAttendancesBySessionQuery(sessionId), cancellationToken);
@@ -46,7 +44,6 @@ public class AttendancesController : BaseController
     }
 
     [HttpGet("matrix")]
-    [Authorize(Roles = "Staff,Admin")]
     public async Task<ActionResult<AttendanceMatrixResult>> Matrix(
         [FromQuery] int courseOfferingId,
         CancellationToken cancellationToken)

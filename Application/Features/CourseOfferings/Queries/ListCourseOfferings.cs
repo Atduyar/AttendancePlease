@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.CourseOfferings.Queries;
 
-public record ListCourseOfferingsQuery : IRequest<List<CourseOfferingDto>>;
+public record ListCourseOfferingsQuery(int? StaffUserId = null) : IRequest<List<CourseOfferingDto>>;
 
 public class ListCourseOfferingsQueryHandler : IRequestHandler<ListCourseOfferingsQuery, List<CourseOfferingDto>>
 {
@@ -19,11 +19,16 @@ public class ListCourseOfferingsQueryHandler : IRequestHandler<ListCourseOfferin
 
     public async Task<List<CourseOfferingDto>> Handle(ListCourseOfferingsQuery request, CancellationToken cancellationToken)
     {
-        var offerings = await _context.CourseOfferings
+        var query = _context.CourseOfferings
             .AsNoTracking()
             .Include(o => o.Course)
             .Include(o => o.Term)
-            .ToListAsync(cancellationToken);
+            .AsQueryable();
+
+        if (request.StaffUserId.HasValue)
+            query = query.Where(o => o.Staff.Any(s => s.UserId == request.StaffUserId.Value));
+
+        var offerings = await query.ToListAsync(cancellationToken);
 
         return offerings.Select(o => new CourseOfferingDto(
             o.Id,
