@@ -1,11 +1,29 @@
+using Application.Common.Interfaces;
 using Application.Features.Auth.Commands;
+using Domain.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
 
+public record AddRoleRequest(string Email, UserRole Role);
+
 [Route("api/[controller]")]
 public class AuthController : BaseController
 {
+    [HttpPost("add-role")]
+    [Authorize]
+    public async Task<ActionResult> AddRole(
+        [FromBody] AddRoleRequest request,
+        [FromServices] IIdentityService identityService,
+        CancellationToken cancellationToken)
+    {
+        var errors = await identityService.AddRoleAsync(request.Email, request.Role, cancellationToken);
+        if (errors.Length > 0)
+            return BadRequest(new { errors });
+        return Ok();
+    }
+
     [HttpPost("register")]
     public async Task<ActionResult> Register(RegisterCommand command, CancellationToken cancellationToken)
     {

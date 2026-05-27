@@ -43,6 +43,20 @@ public class IdentityService : IIdentityService
         return new Application.Common.Models.IdentityResult(token, user.Id, user.Email!, user.Name, role.ToString(), Array.Empty<string>());
     }
 
+    public async Task<string[]> AddRoleAsync(string email, UserRole role, CancellationToken cancellationToken = default)
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user == null) return new[] { "User not found" };
+
+        var alreadyInRole = await _userManager.IsInRoleAsync(user, role.ToString());
+        if (alreadyInRole) return Array.Empty<string>();
+
+        var result = await _userManager.AddToRoleAsync(user, role.ToString());
+        return result.Succeeded
+            ? Array.Empty<string>()
+            : result.Errors.Select(e => e.Description).ToArray();
+    }
+
     public async Task<Application.Common.Models.IdentityResult> LoginAsync(
         string email, string password, CancellationToken cancellationToken = default)
     {

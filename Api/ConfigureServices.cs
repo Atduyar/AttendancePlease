@@ -24,7 +24,15 @@ public static class ConfigureServices
         services.AddEndpointsApiExplorer();
         services.AddOpenApi(OpenApiConfiguration.Configure);
         services.AddProblemDetails();
-        services.AddAuthorization();
+        services.AddAuthorization(options =>
+        {
+            // Default policy: accept either Local JWT or Azure AD token
+            options.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder("Local", "AzureAD")
+                .RequireAuthenticatedUser()
+                .Build();
+
+            options.FallbackPolicy = options.DefaultPolicy;
+        });
 
         services.AddCors(options =>
         {

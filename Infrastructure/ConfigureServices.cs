@@ -47,8 +47,12 @@ public static class ConfigureServices
         .AddSignInManager()
         .AddDefaultTokenProviders();
 
+        var tenantId = configuration["AzureAd:TenantId"];
+        var clientId = configuration["AzureAd:ClientId"];
+        var useAzureAd = !string.IsNullOrEmpty(tenantId) && !string.IsNullOrEmpty(clientId);
+
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
+            .AddJwtBearer("Local", options =>
             {
                 options.MapInboundClaims = false;
                 options.TokenValidationParameters = new TokenValidationParameters
@@ -63,6 +67,19 @@ public static class ConfigureServices
                     ClockSkew = TimeSpan.FromMinutes(5),
                     NameClaimType = "sub",
                     RoleClaimType = "role"
+                };
+            })
+            .AddJwtBearer("AzureAD", options =>
+            {
+                options.Authority = $"https://login.microsoftonline.com/{tenantId}/v2.0";
+                options.Audience = $"api://{clientId}";
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = false,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    NameClaimType = "preferred_username",
+                    RoleClaimType = "roles"
                 };
             });
 
