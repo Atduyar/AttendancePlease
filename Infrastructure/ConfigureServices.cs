@@ -71,6 +71,8 @@ public static class ConfigureServices
 
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
+        services.AddScoped<EntraIdTokenValidator>();
+        services.AddScoped<EntraIdUserProvisioner>();
 
         return services;
     }

@@ -30,9 +30,14 @@ public static class ConfigureServices
         {
             options.AddDefaultPolicy(policy =>
             {
-                policy.AllowAnyOrigin()
-                      .AllowAnyMethod()
-                      .AllowAnyHeader();
+                var allowedOrigins = configuration["Cors:AllowedOrigins"]
+                    ?.Split(";", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    ?? ["http://localhost:5173"];
+
+                policy.WithOrigins(allowedOrigins)
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials();
             });
         });
 
