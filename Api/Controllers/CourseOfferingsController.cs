@@ -6,10 +6,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
 
-[Authorize(Roles = "Admin")]
+[Authorize]
 public class CourseOfferingsController : BaseController
 {
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<CourseOfferingDto>> Create(CreateCourseOfferingCommand command, CancellationToken cancellationToken)
     {
         var dto = await Mediator.Send(command, cancellationToken);
@@ -17,6 +18,7 @@ public class CourseOfferingsController : BaseController
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<CourseOfferingDto>> Update(int id, UpdateCourseOfferingCommand command, CancellationToken cancellationToken)
     {
         if (id != command.Id) return BadRequest();
@@ -25,6 +27,7 @@ public class CourseOfferingsController : BaseController
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         await Mediator.Send(new DeleteCourseOfferingCommand(id), cancellationToken);
@@ -32,13 +35,17 @@ public class CourseOfferingsController : BaseController
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<CourseOfferingDto>>> List(CancellationToken cancellationToken)
+    [Authorize(Roles = "Admin,Staff")]
+    public async Task<ActionResult<List<CourseOfferingDto>>> List(
+        [FromQuery] int? staffUserId,
+        CancellationToken cancellationToken)
     {
-        var offerings = await Mediator.Send(new ListCourseOfferingsQuery(), cancellationToken);
+        var offerings = await Mediator.Send(new ListCourseOfferingsQuery(staffUserId), cancellationToken);
         return Ok(offerings);
     }
 
     [HttpGet("{id}")]
+    [Authorize(Roles = "Admin,Staff")]
     public async Task<ActionResult<CourseOfferingDto>> Get(int id, CancellationToken cancellationToken)
     {
         var offering = await Mediator.Send(new GetCourseOfferingQuery(id), cancellationToken);

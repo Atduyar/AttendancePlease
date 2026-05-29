@@ -6,10 +6,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
 
-[Authorize(Roles = "Admin")]
+[Authorize]
 public class ModulesController : BaseController
 {
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ModuleDto>> Create(CreateModuleCommand command, CancellationToken cancellationToken)
     {
         var dto = await Mediator.Send(command, cancellationToken);
@@ -17,6 +18,7 @@ public class ModulesController : BaseController
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ModuleDto>> Update(int id, UpdateModuleCommand command, CancellationToken cancellationToken)
     {
         if (id != command.Id) return BadRequest();
@@ -25,6 +27,7 @@ public class ModulesController : BaseController
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         await Mediator.Send(new DeleteModuleCommand(id), cancellationToken);
@@ -32,6 +35,7 @@ public class ModulesController : BaseController
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin,Staff")]
     public async Task<ActionResult<List<ModuleDto>>> List([FromQuery] int? courseOfferingId, CancellationToken cancellationToken)
     {
         var modules = await Mediator.Send(new ListModulesQuery(courseOfferingId), cancellationToken);
@@ -39,6 +43,7 @@ public class ModulesController : BaseController
     }
 
     [HttpGet("{id}")]
+    [Authorize(Roles = "Admin,Staff")]
     public async Task<ActionResult<ModuleDto>> Get(int id, CancellationToken cancellationToken)
     {
         var module = await Mediator.Send(new GetModuleQuery(id), cancellationToken);

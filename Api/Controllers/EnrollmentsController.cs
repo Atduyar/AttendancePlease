@@ -35,7 +35,7 @@ public class EnrollmentsController : BaseController
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Staff")]
     public async Task<ActionResult<List<EnrollmentDto>>> List(
         [FromQuery] int? courseOfferingId,
         [FromQuery] int? userId,
@@ -54,7 +54,7 @@ public class EnrollmentsController : BaseController
     }
 
     [HttpGet("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Staff")]
     public async Task<ActionResult<EnrollmentDto>> Get(int id, CancellationToken cancellationToken)
     {
         var enrollment = await Mediator.Send(new GetEnrollmentQuery(id), cancellationToken);
