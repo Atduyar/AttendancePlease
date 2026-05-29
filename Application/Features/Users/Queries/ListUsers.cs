@@ -1,6 +1,5 @@
 using Application.Features.Users.Dtos;
 using Domain.Entities;
-using Mapster;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +22,15 @@ public class ListUsersQueryHandler : IRequestHandler<ListUsersQuery, List<UserDt
         var users = await _userManager.Users
             .AsNoTracking()
             .ToListAsync(cancellationToken);
-        return users.Adapt<List<UserDto>>();
+
+        var result = new List<UserDto>();
+        foreach (var user in users)
+        {
+            var roles = (await _userManager.GetRolesAsync(user)).ToList();
+            var primaryRole = roles.FirstOrDefault() ?? user.Role.ToString();
+            result.Add(new UserDto(user.Id, user.Name, user.Email!, primaryRole, roles, user.CreatedAt));
+        }
+
+        return result;
     }
 }

@@ -1,9 +1,9 @@
 using Application.Common.Exceptions;
-using Application.Common.Interfaces;
 using Application.Features.Users.Dtos;
+using Domain.Entities;
 using FluentValidation;
-using Mapster;
 using MediatR;
+using Microsoft.AspNetCore.Identity;
 
 namespace Application.Features.Users.Queries;
 
@@ -19,17 +19,20 @@ public class GetUserQueryValidator : AbstractValidator<GetUserQuery>
 
 public class GetUserQueryHandler : IRequestHandler<GetUserQuery, UserDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly UserManager<User> _userManager;
 
-    public GetUserQueryHandler(IApplicationDbContext context)
+    public GetUserQueryHandler(UserManager<User> userManager)
     {
-        _context = context;
+        _userManager = userManager;
     }
 
     public async Task<UserDto> Handle(GetUserQuery request, CancellationToken cancellationToken)
     {
-        var user = await _context.Users.FindAsync(request.Id, cancellationToken);
+        var user = await _userManager.FindByIdAsync(request.Id.ToString());
         if (user == null) throw new NotFoundException(nameof(user), request.Id);
-        return user.Adapt<UserDto>();
+
+        var roles = (await _userManager.GetRolesAsync(user)).ToList();
+        var primaryRole = roles.FirstOrDefault() ?? user.Role.ToString();
+        return new UserDto(user.Id, user.Name, user.Email!, primaryRole, roles, user.CreatedAt);
     }
 }

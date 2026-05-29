@@ -3,7 +3,6 @@ using Application.Features.Sessions.Dtos;
 using Application.Features.Sessions.Queries;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace Api.Controllers;
 
@@ -13,8 +12,7 @@ public class SessionsController : BaseController
     [HttpPost]
     public async Task<ActionResult<SessionDto>> Open(OpenSessionCommand command, CancellationToken cancellationToken)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-        var cmd = command with { OpenedByUserId = userId };
+        var cmd = command with { OpenedByUserId = CurrentUserId };
         var dto = await Mediator.Send(cmd, cancellationToken);
         return CreatedAtAction(nameof(Get), new { id = dto.Id }, dto);
     }

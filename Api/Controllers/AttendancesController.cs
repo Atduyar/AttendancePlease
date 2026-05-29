@@ -3,7 +3,6 @@ using Application.Features.Attendances.Dtos;
 using Application.Features.Attendances.Queries;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace Api.Controllers;
 
@@ -21,8 +20,7 @@ public class AttendancesController : BaseController
     [HttpPost("scan")]
     public async Task<ActionResult<ScanResult>> Scan(StudentScanAttendanceCommand command, CancellationToken cancellationToken)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-        var cmd = command with { StudentUserId = userId };
+        var cmd = command with { StudentUserId = CurrentUserId };
         var result = await Mediator.Send(cmd, cancellationToken);
         return Ok(result);
     }
@@ -40,8 +38,7 @@ public class AttendancesController : BaseController
         [FromQuery] int courseOfferingId,
         CancellationToken cancellationToken)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-        var overview = await Mediator.Send(new StudentAttendanceOverviewQuery(userId, courseOfferingId), cancellationToken);
+        var overview = await Mediator.Send(new StudentAttendanceOverviewQuery(CurrentUserId, courseOfferingId), cancellationToken);
         return Ok(overview);
     }
 

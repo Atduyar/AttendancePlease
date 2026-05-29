@@ -3,6 +3,7 @@ using Api.Models.Auth;
 using Application.Common.Interfaces;
 using Application.Features.Auth.Commands;
 using Domain.Entities;
+using Domain.Enums;
 using Infrastructure.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -18,6 +19,8 @@ public class AuthController : BaseController
     private readonly EntraIdUserProvisioner _userProvisioner;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly UserManager<User> _userManager;
+    private readonly RoleManager<IdentityRole<int>> _roleManager;
+    private readonly IWebHostEnvironment _environment;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
@@ -25,12 +28,16 @@ public class AuthController : BaseController
         EntraIdUserProvisioner userProvisioner,
         IJwtTokenService jwtTokenService,
         UserManager<User> userManager,
+        RoleManager<IdentityRole<int>> roleManager,
+        IWebHostEnvironment environment,
         ILogger<AuthController> logger)
     {
         _tokenValidator = tokenValidator;
         _userProvisioner = userProvisioner;
         _jwtTokenService = jwtTokenService;
         _userManager = userManager;
+        _roleManager = roleManager;
+        _environment = environment;
         _logger = logger;
     }
 
@@ -166,6 +173,93 @@ public class AuthController : BaseController
         }
     }
 
+    [HttpPost("dev-role")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(AuthTokenResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AuthTokenResponse>> DevRole(DevRoleRequest request)
+    {
+        if (!_environment.IsDevelopment())
+        {
+            return NotFound();
+        }
+
+        User? user = null;
+        if (request.UserId.HasValue)
+        {
+            user = await _userManager.FindByIdAsync(request.UserId.Value.ToString());
+        }
+
+        if (user == null && !string.IsNullOrWhiteSpace(request.Email))
+        {
+            user = await _userManager.FindByEmailAsync(request.Email.Trim().ToLowerInvariant());
+        }
+
+        if (user == null)
+        {
+            return Problem(
+                title: "User not found",
+                statusCode: StatusCodes.Status404NotFound,
+                detail: "Provide a valid userId or email.");
+        }
+
+        var roleName = request.Role.ToString();
+        if (!await _roleManager.RoleExistsAsync(roleName))
+        {
+            var createRole = await _roleManager.CreateAsync(new IdentityRole<int>(roleName));
+            if (!createRole.Succeeded)
+            {
+                return Problem(
+                    title: "Role creation failed",
+                    statusCode: StatusCodes.Status400BadRequest,
+                    extensions: new Dictionary<string, object?> { ["errors"] = createRole.Errors.Select(e => e.Description).ToArray() });
+            }
+        }
+
+        var appRoles = Enum.GetNames<UserRole>();
+        var currentRoles = await _userManager.GetRolesAsync(user);
+        var rolesToRemove = currentRoles.Where(role => appRoles.Contains(role)).ToArray();
+        if (rolesToRemove.Length > 0)
+        {
+            var removeResult = await _userManager.RemoveFromRolesAsync(user, rolesToRemove);
+            if (!removeResult.Succeeded)
+            {
+                return Problem(
+                    title: "Role removal failed",
+                    statusCode: StatusCodes.Status400BadRequest,
+                    extensions: new Dictionary<string, object?> { ["errors"] = removeResult.Errors.Select(e => e.Description).ToArray() });
+            }
+        }
+
+        var addResult = await _userManager.AddToRoleAsync(user, roleName);
+        if (!addResult.Succeeded)
+        {
+            return Problem(
+                title: "Role assignment failed",
+                statusCode: StatusCodes.Status400BadRequest,
+                extensions: new Dictionary<string, object?> { ["errors"] = addResult.Errors.Select(e => e.Description).ToArray() });
+        }
+
+        user.Role = request.Role;
+        await _userManager.UpdateAsync(user);
+
+        var roles = await _userManager.GetRolesAsync(user);
+        var accessToken = _jwtTokenService.GenerateAccessToken(user.Id, user.Email!, user.Name, roles);
+        var refreshToken = _jwtTokenService.GenerateRefreshToken(user.Id);
+        var primaryRole = roles.FirstOrDefault() ?? roleName;
+
+        return Ok(new AuthTokenResponse(
+            accessToken.Token,
+            refreshToken.Token,
+            accessToken.ExpiresAt,
+            refreshToken.ExpiresAt,
+            new AuthUserResponse(
+                user.Id,
+                user.Email!,
+                user.Name,
+                primaryRole,
+                roles.ToList())));
+    }
+
     [HttpPost("register")]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult> Register(RegisterCommand command, CancellationToken cancellationToken)
@@ -191,3 +285,5 @@ public class AuthController : BaseController
 }
 
 public record RefreshTokenRequest(string RefreshToken);
+
+public record DevRoleRequest(int? UserId, string? Email, UserRole Role);

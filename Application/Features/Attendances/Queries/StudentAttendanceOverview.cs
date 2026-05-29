@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -35,6 +36,13 @@ public class StudentAttendanceOverviewQueryHandler
     public async Task<StudentAttendanceOverview> Handle(
         StudentAttendanceOverviewQuery request, CancellationToken cancellationToken)
     {
+        var enrollment = await _context.Enrollments
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.UserId == request.StudentUserId
+                && e.CourseOfferingId == request.CourseOfferingId, cancellationToken);
+
+        if (enrollment == null) throw new NotFoundException("Enrollment", request.CourseOfferingId);
+
         var modules = await _context.Modules
             .AsNoTracking()
             .Where(m => m.CourseOfferingId == request.CourseOfferingId)
@@ -47,6 +55,7 @@ public class StudentAttendanceOverviewQueryHandler
             .Include(s => s.Section)
             .Include(s => s.Attendances)
             .Where(s => s.Module.CourseOfferingId == request.CourseOfferingId
+                && s.SectionId == enrollment.SectionId
                 && s.Status != Domain.Enums.SessionStatus.Canceled)
             .ToListAsync(cancellationToken);
 
