@@ -10,6 +10,12 @@ public class ValidationException : Exception
         Errors = new Dictionary<string, string[]>();
     }
 
+    public ValidationException(IDictionary<string, string[]> errors)
+        : this()
+    {
+        Errors = errors;
+    }
+
     public ValidationException(IEnumerable<FluentValidation.Results.ValidationFailure> failures)
         : this()
     {

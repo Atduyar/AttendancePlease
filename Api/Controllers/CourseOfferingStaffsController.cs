@@ -6,10 +6,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
 
-[Authorize(Roles = "Admin")]
+[Authorize]
 public class CourseOfferingStaffsController : BaseController
 {
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<CourseOfferingStaffDto>> Assign(AssignStaffCommand command, CancellationToken cancellationToken)
     {
         var dto = await Mediator.Send(command, cancellationToken);
@@ -17,6 +18,7 @@ public class CourseOfferingStaffsController : BaseController
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult> Remove(int id, CancellationToken cancellationToken)
     {
         await Mediator.Send(new RemoveStaffCommand(id), cancellationToken);
@@ -24,6 +26,7 @@ public class CourseOfferingStaffsController : BaseController
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin,Staff")]
     public async Task<ActionResult<List<CourseOfferingStaffDto>>> List([FromQuery] int courseOfferingId, CancellationToken cancellationToken)
     {
         var staff = await Mediator.Send(new ListStaffQuery(courseOfferingId), cancellationToken);

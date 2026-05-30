@@ -29,7 +29,13 @@ public class CreateTermCommandHandler : IRequestHandler<CreateTermCommand, TermD
 
     public async Task<TermDto> Handle(CreateTermCommand request, CancellationToken cancellationToken)
     {
-        var term = request.Adapt<Term>();
+        var term = new Term
+        {
+            Code = request.Name,
+            StartDate = DateOnly.FromDateTime(request.StartDate),
+            EndDate = DateOnly.FromDateTime(request.EndDate)
+        };
+
         _context.Terms.Add(term);
         await _context.SaveChangesAsync(cancellationToken);
         return term.Adapt<TermDto>();

@@ -10,7 +10,7 @@ namespace Api.Controllers;
 public class SectionsController : BaseController
 {
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Staff")]
     public async Task<ActionResult<SectionDto>> Create(CreateSectionCommand command, CancellationToken cancellationToken)
     {
         var dto = await Mediator.Send(command, cancellationToken);
@@ -18,7 +18,7 @@ public class SectionsController : BaseController
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Staff")]
     public async Task<ActionResult<SectionDto>> Update(int id, UpdateSectionCommand command, CancellationToken cancellationToken)
     {
         if (id != command.Id) return BadRequest();
@@ -27,7 +27,7 @@ public class SectionsController : BaseController
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Staff")]
     public async Task<ActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         await Mediator.Send(new DeleteSectionCommand(id), cancellationToken);

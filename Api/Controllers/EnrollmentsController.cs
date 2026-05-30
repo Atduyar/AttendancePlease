@@ -10,7 +10,7 @@ namespace Api.Controllers;
 public class EnrollmentsController : BaseController
 {
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Staff")]
     public async Task<ActionResult<EnrollmentDto>> Enroll(EnrollStudentCommand command, CancellationToken cancellationToken)
     {
         var dto = await Mediator.Send(command, cancellationToken);
@@ -18,7 +18,7 @@ public class EnrollmentsController : BaseController
     }
 
     [HttpPut("{id}/section")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Staff")]
     public async Task<ActionResult<EnrollmentDto>> UpdateSection(int id, UpdateEnrollmentSectionCommand command, CancellationToken cancellationToken)
     {
         if (id != command.Id) return BadRequest();
@@ -27,7 +27,7 @@ public class EnrollmentsController : BaseController
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Staff")]
     public async Task<ActionResult> Unenroll(int id, CancellationToken cancellationToken)
     {
         await Mediator.Send(new UnenrollStudentCommand(id), cancellationToken);
