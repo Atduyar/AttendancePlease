@@ -10,4 +10,5 @@ public class Section : BaseEntity
     public CourseOffering CourseOffering { get; set; } = null!;
     public ICollection<Enrollment> Enrollments { get; set; } = [];
     public ICollection<Session> Sessions { get; set; } = [];
+    public ICollection<CourseOfferingStaff> StaffAssignments { get; set; } = [];
 }

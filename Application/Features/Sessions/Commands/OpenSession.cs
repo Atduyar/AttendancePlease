@@ -30,6 +30,21 @@ public class OpenSessionCommandHandler : IRequestHandler<OpenSessionCommand, Ses
 
     public async Task<SessionDto> Handle(OpenSessionCommand request, CancellationToken cancellationToken)
     {
+        if (request.SectionId.HasValue)
+        {
+            var sectionMatchesModuleOffering = await _context.Sections.AnyAsync(
+                section => section.Id == request.SectionId.Value &&
+                    _context.Modules.Any(module => module.Id == request.ModuleId && module.CourseOfferingId == section.CourseOfferingId),
+                cancellationToken);
+            if (!sectionMatchesModuleOffering)
+            {
+                throw new Application.Common.Exceptions.ValidationException(new Dictionary<string, string[]>
+                {
+                    [nameof(request.SectionId)] = ["Section must belong to the module course offering."]
+                });
+            }
+        }
+
         var session = new Session
         {
             ModuleId = request.ModuleId,

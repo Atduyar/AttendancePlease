@@ -30,6 +30,17 @@ public class EnrollStudentCommandHandler : IRequestHandler<EnrollStudentCommand,
 
     public async Task<EnrollmentDto> Handle(EnrollStudentCommand request, CancellationToken cancellationToken)
     {
+        var sectionBelongsToOffering = await _context.Sections.AnyAsync(
+            section => section.Id == request.SectionId && section.CourseOfferingId == request.CourseOfferingId,
+            cancellationToken);
+        if (!sectionBelongsToOffering)
+        {
+            throw new Application.Common.Exceptions.ValidationException(new Dictionary<string, string[]>
+            {
+                [nameof(request.SectionId)] = ["Section must belong to the selected course offering."]
+            });
+        }
+
         var enrollment = new Enrollment
         {
             UserId = request.UserId,

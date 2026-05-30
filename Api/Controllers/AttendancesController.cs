@@ -10,9 +10,11 @@ namespace Api.Controllers;
 public class AttendancesController : BaseController
 {
     [HttpPost("mark")]
-    [Authorize(Roles = "Staff,Admin")]
+    [Authorize(Roles = "Staff,Admin,Student")]
     public async Task<ActionResult<AttendanceDto>> Mark(MarkAttendanceCommand command, CancellationToken cancellationToken)
     {
+        if (!await HasSessionAccessAsync(command.SessionId, Domain.Enums.CourseOfferingStaffAccessLevel.Assistant, cancellationToken)) return Forbid();
+
         var dto = await Mediator.Send(command, cancellationToken);
         return CreatedAtAction(nameof(Get), new { id = dto.Id }, dto);
     }
@@ -26,9 +28,11 @@ public class AttendancesController : BaseController
     }
 
     [HttpGet("session/{sessionId}")]
-    [Authorize(Roles = "Staff,Admin")]
+    [Authorize(Roles = "Staff,Admin,Student")]
     public async Task<ActionResult<List<AttendanceDto>>> ListBySession(int sessionId, CancellationToken cancellationToken)
     {
+        if (!await HasSessionAccessAsync(sessionId, cancellationToken: cancellationToken)) return Forbid();
+
         var attendances = await Mediator.Send(new ListAttendancesBySessionQuery(sessionId), cancellationToken);
         return Ok(attendances);
     }
@@ -43,11 +47,13 @@ public class AttendancesController : BaseController
     }
 
     [HttpGet("matrix")]
-    [Authorize(Roles = "Staff,Admin")]
+    [Authorize(Roles = "Staff,Admin,Student")]
     public async Task<ActionResult<AttendanceMatrixResult>> Matrix(
         [FromQuery] int courseOfferingId,
         CancellationToken cancellationToken)
     {
+        if (!await HasOfferingAccessAsync(courseOfferingId, cancellationToken: cancellationToken)) return Forbid();
+
         var result = await Mediator.Send(new AttendanceMatrixQuery(courseOfferingId), cancellationToken);
         return Ok(result);
     }

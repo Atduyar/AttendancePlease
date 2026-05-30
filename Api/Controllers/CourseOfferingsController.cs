@@ -35,19 +35,22 @@ public class CourseOfferingsController : BaseController
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,Staff,Student")]
     public async Task<ActionResult<List<CourseOfferingDto>>> List(
         [FromQuery] int? staffUserId,
         CancellationToken cancellationToken)
     {
-        var offerings = await Mediator.Send(new ListCourseOfferingsQuery(staffUserId), cancellationToken);
+        var effectiveStaffUserId = User.IsInRole("Admin") ? staffUserId : CurrentUserId;
+        var offerings = await Mediator.Send(new ListCourseOfferingsQuery(effectiveStaffUserId), cancellationToken);
         return Ok(offerings);
     }
 
     [HttpGet("{id}")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,Staff,Student")]
     public async Task<ActionResult<CourseOfferingDto>> Get(int id, CancellationToken cancellationToken)
     {
+        if (!await HasOfferingAccessAsync(id, cancellationToken: cancellationToken)) return Forbid();
+
         var offering = await Mediator.Send(new GetCourseOfferingQuery(id), cancellationToken);
         return Ok(offering);
     }

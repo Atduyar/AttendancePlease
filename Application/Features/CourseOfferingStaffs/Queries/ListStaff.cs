@@ -30,14 +30,24 @@ public class ListStaffQueryHandler : IRequestHandler<ListStaffQuery, List<Course
         var staff = await _context.CourseOfferingStaffs
             .AsNoTracking()
             .Include(s => s.User)
+            .Include(s => s.Section)
             .Where(s => s.CourseOfferingId == request.CourseOfferingId)
+            .OrderBy(s => s.Scope)
+            .ThenBy(s => s.Section!.Name)
+            .ThenBy(s => s.User.Name)
             .ToListAsync(cancellationToken);
 
         return staff.Select(s => new CourseOfferingStaffDto(
             s.Id,
             s.CourseOfferingId,
+            s.SectionId,
+            s.Section?.Name,
             s.UserId,
             s.User.Name,
+            s.User.Email!,
+            s.User.Role.ToString(),
+            s.Scope,
+            s.AccessLevel,
             s.RoleTitle,
             s.CreatedAt)).ToList();
     }

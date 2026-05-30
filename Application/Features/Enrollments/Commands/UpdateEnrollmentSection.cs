@@ -32,6 +32,17 @@ public class UpdateEnrollmentSectionCommandHandler : IRequestHandler<UpdateEnrol
         var enrollment = await _context.Enrollments.FindAsync(request.Id, cancellationToken);
         if (enrollment == null) throw new NotFoundException(nameof(enrollment), request.Id);
 
+        var sectionBelongsToOffering = await _context.Sections.AnyAsync(
+            section => section.Id == request.SectionId && section.CourseOfferingId == enrollment.CourseOfferingId,
+            cancellationToken);
+        if (!sectionBelongsToOffering)
+        {
+            throw new Application.Common.Exceptions.ValidationException(new Dictionary<string, string[]>
+            {
+                [nameof(request.SectionId)] = ["Section must belong to the enrollment course offering."]
+            });
+        }
+
         enrollment.SectionId = request.SectionId;
         await _context.SaveChangesAsync(cancellationToken);
 
