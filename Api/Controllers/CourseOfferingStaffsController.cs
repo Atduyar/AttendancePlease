@@ -29,6 +29,33 @@ public class CourseOfferingStaffsController : BaseController
         return CreatedAtAction(null, new { id = dto.Id }, dto);
     }
 
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,Staff,Student")]
+    public async Task<ActionResult<CourseOfferingStaffDto>> Update(int id, UpdateStaffCommand command, CancellationToken cancellationToken)
+    {
+        if (id != command.Id) return BadRequest();
+
+        if (!User.IsInRole("Admin"))
+        {
+            var assignment = await DbContext.CourseOfferingStaffs.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+            if (assignment == null) return NotFound();
+            if (assignment.AccessLevel == CourseOfferingStaffAccessLevel.Owner || command.AccessLevel == CourseOfferingStaffAccessLevel.Owner) return Forbid();
+
+            var canManageExisting = assignment.Scope == CourseOfferingStaffScope.Section && assignment.SectionId.HasValue
+                ? await HasSectionAccessAsync(assignment.SectionId.Value, CourseOfferingStaffAccessLevel.Owner, cancellationToken, allowGlobalStaffRole: false)
+                : await HasOfferingAccessAsync(assignment.CourseOfferingId, CourseOfferingStaffAccessLevel.Owner, cancellationToken, allowGlobalStaffRole: false);
+            if (!canManageExisting) return Forbid();
+
+            var canManageRequested = command.Scope == CourseOfferingStaffScope.Section && command.SectionId.HasValue
+                ? await HasSectionAccessAsync(command.SectionId.Value, CourseOfferingStaffAccessLevel.Owner, cancellationToken, allowGlobalStaffRole: false)
+                : await HasOfferingAccessAsync(assignment.CourseOfferingId, CourseOfferingStaffAccessLevel.Owner, cancellationToken, allowGlobalStaffRole: false);
+            if (!canManageRequested) return Forbid();
+        }
+
+        var dto = await Mediator.Send(command, cancellationToken);
+        return Ok(dto);
+    }
+
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin,Staff,Student")]
     public async Task<ActionResult> Remove(int id, CancellationToken cancellationToken)
