@@ -1,8 +1,10 @@
 using System.Security.Claims;
 using Application.Common.Interfaces;
+using Application.Features.Enrollments;
 using Domain.Entities;
 using Domain.Enums;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Identity;
@@ -11,15 +13,18 @@ public class EntraIdUserProvisioner
 {
     private readonly UserManager<User> _userManager;
     private readonly IJwtTokenService _jwtTokenService;
+    private readonly IApplicationDbContext _context;
     private readonly ILogger<EntraIdUserProvisioner> _logger;
 
     public EntraIdUserProvisioner(
         UserManager<User> userManager,
         IJwtTokenService jwtTokenService,
+        IApplicationDbContext context,
         ILogger<EntraIdUserProvisioner> logger)
     {
         _userManager = userManager;
         _jwtTokenService = jwtTokenService;
+        _context = context;
         _logger = logger;
     }
 
@@ -46,6 +51,7 @@ public class EntraIdUserProvisioner
         var displayName = entraPrincipal.FindFirst("name")?.Value
                           ?? entraPrincipal.FindFirst(ClaimTypes.Name)?.Value
                           ?? email;
+        var studentNumber = StudentNumber.FromStudentEmail(email);
 
         var user = await _userManager.FindByLoginAsync("EntraId", entraOid);
 
@@ -76,6 +82,7 @@ public class EntraIdUserProvisioner
                 Email = email,
                 Name = displayName,
                 Role = derivedRole,
+                StudentNumber = studentNumber,
                 EmailConfirmed = true
             };
 
@@ -104,11 +111,29 @@ public class EntraIdUserProvisioner
         }
         else
         {
-            if (user.Name != displayName || user.Email != email)
+            if (user.Name != displayName || user.Email != email || user.StudentNumber != studentNumber)
             {
                 user.Name = displayName;
                 user.Email = email;
+                if (!string.IsNullOrWhiteSpace(studentNumber)) user.StudentNumber = studentNumber;
                 await _userManager.UpdateAsync(user);
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(user.StudentNumber))
+        {
+            var pendingEnrollments = await _context.Enrollments
+                .Where(e => e.UserId == null && e.StudentNumber == user.StudentNumber)
+                .ToListAsync(cancellationToken);
+            foreach (var enrollment in pendingEnrollments)
+            {
+                enrollment.UserId = user.Id;
+            }
+
+            if (pendingEnrollments.Count > 0)
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+                _logger.LogInformation("Linked {Count} pending enrollment(s) to student {StudentNumber}", pendingEnrollments.Count, user.StudentNumber);
             }
         }
 

@@ -1,4 +1,5 @@
 using Application.Common.Interfaces;
+using Application.Features.Enrollments;
 using Domain.Entities;
 using Domain.Enums;
 using FluentValidation;
@@ -41,6 +42,24 @@ public class StudentScanAttendanceCommandHandler : IRequestHandler<StudentScanAt
 
         if (session.Status != SessionStatus.Open)
             return new ScanResult(0, false, "Session is not open");
+
+        var student = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.StudentUserId, cancellationToken);
+        var studentNumber = student?.StudentNumber ?? StudentNumber.FromStudentEmail(student?.Email);
+        if (student != null && string.IsNullOrWhiteSpace(student.StudentNumber) && !string.IsNullOrWhiteSpace(studentNumber))
+        {
+            student.StudentNumber = studentNumber;
+        }
+
+        if (!string.IsNullOrWhiteSpace(studentNumber))
+        {
+            var pendingEnrollments = await _context.Enrollments
+                .Where(e => e.UserId == null && e.StudentNumber == studentNumber)
+                .ToListAsync(cancellationToken);
+            foreach (var pending in pendingEnrollments)
+            {
+                pending.UserId = request.StudentUserId;
+            }
+        }
 
         var enrollment = await _context.Enrollments
             .FirstOrDefaultAsync(e => e.UserId == request.StudentUserId

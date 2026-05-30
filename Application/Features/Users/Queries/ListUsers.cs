@@ -28,7 +28,7 @@ public class ListUsersQueryHandler : IRequestHandler<ListUsersQuery, List<UserDt
         {
             var roles = (await _userManager.GetRolesAsync(user)).ToList();
             var primaryRole = roles.FirstOrDefault() ?? user.Role.ToString();
-            result.Add(new UserDto(user.Id, user.Name, user.Email!, primaryRole, roles, user.CreatedAt));
+            result.Add(new UserDto(user.Id, user.Name, user.Email!, user.StudentNumber, primaryRole, roles, user.CreatedAt));
         }
 
         return result;

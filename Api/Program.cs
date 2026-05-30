@@ -29,5 +29,6 @@ var app = builder.Build();
     app.MapControllers();
 }
 
+await app.Services.MigrateDatabaseAsync();
 await app.Services.SeedRolesAsync();
 app.Run();

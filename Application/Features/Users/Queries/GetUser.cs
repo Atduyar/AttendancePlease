@@ -33,6 +33,6 @@ public class GetUserQueryHandler : IRequestHandler<GetUserQuery, UserDto>
 
         var roles = (await _userManager.GetRolesAsync(user)).ToList();
         var primaryRole = roles.FirstOrDefault() ?? user.Role.ToString();
-        return new UserDto(user.Id, user.Name, user.Email!, primaryRole, roles, user.CreatedAt);
+        return new UserDto(user.Id, user.Name, user.Email!, user.StudentNumber, primaryRole, roles, user.CreatedAt);
     }
 }

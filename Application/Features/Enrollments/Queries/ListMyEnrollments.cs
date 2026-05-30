@@ -33,8 +33,8 @@ public class ListMyEnrollmentsQueryHandler : IRequestHandler<ListMyEnrollmentsQu
 
         return enrollments.Select(e => new MyEnrollmentDto(
             e.Id,
-            e.UserId,
-            e.User.Name,
+            e.UserId!.Value,
+            e.User!.Name,
             e.CourseOfferingId,
             e.CourseOffering.CourseId,
             e.CourseOffering.Course.Code,

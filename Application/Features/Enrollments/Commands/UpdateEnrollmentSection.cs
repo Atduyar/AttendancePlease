@@ -1,4 +1,5 @@
 using Application.Common.Exceptions;
+using Application.Features.Enrollments;
 using Application.Common.Interfaces;
 using Application.Features.Enrollments.Dtos;
 using FluentValidation;
@@ -52,13 +53,6 @@ public class UpdateEnrollmentSectionCommandHandler : IRequestHandler<UpdateEnrol
             .Include(e => e.Section)
             .FirstAsync(e => e.Id == enrollment.Id, cancellationToken);
 
-        return new EnrollmentDto(
-            result.Id,
-            result.UserId,
-            result.User.Name,
-            result.CourseOfferingId,
-            result.SectionId,
-            result.Section.Name,
-            result.CreatedAt);
+        return result.ToDto();
     }
 }

@@ -19,6 +19,19 @@ public class EnrollmentsController : BaseController
         return CreatedAtAction(nameof(Get), new { id = dto.Id }, dto);
     }
 
+    [HttpPost("bulk")]
+    [Authorize(Roles = "Admin,Staff,Student")]
+    public async Task<ActionResult<BulkEnrollStudentsResult>> BulkEnroll(BulkEnrollStudentsCommand command, CancellationToken cancellationToken)
+    {
+        foreach (var sectionId in command.Students.Select(student => student.SectionId).Distinct())
+        {
+            if (!await HasSectionAccessAsync(sectionId, Domain.Enums.CourseOfferingStaffAccessLevel.Instructor, cancellationToken)) return Forbid();
+        }
+
+        var result = await Mediator.Send(command, cancellationToken);
+        return Ok(result);
+    }
+
     [HttpPut("{id}/section")]
     [Authorize(Roles = "Admin,Staff,Student")]
     public async Task<ActionResult<EnrollmentDto>> UpdateSection(int id, UpdateEnrollmentSectionCommand command, CancellationToken cancellationToken)

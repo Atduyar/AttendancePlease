@@ -1,4 +1,5 @@
 using Application.Common.Exceptions;
+using Application.Features.Enrollments;
 using Application.Common.Interfaces;
 using Application.Features.Enrollments.Dtos;
 using FluentValidation;
@@ -36,13 +37,6 @@ public class GetEnrollmentQueryHandler : IRequestHandler<GetEnrollmentQuery, Enr
 
         if (enrollment == null) throw new NotFoundException(nameof(enrollment), request.Id);
 
-        return new EnrollmentDto(
-            enrollment.Id,
-            enrollment.UserId,
-            enrollment.User.Name,
-            enrollment.CourseOfferingId,
-            enrollment.SectionId,
-            enrollment.Section.Name,
-            enrollment.CreatedAt);
+        return enrollment.ToDto();
     }
 }

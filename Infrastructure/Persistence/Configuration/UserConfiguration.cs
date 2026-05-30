@@ -9,6 +9,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
     public void Configure(EntityTypeBuilder<User> builder)
     {
         builder.Property(u => u.Name).HasMaxLength(200);
+        builder.Property(u => u.StudentNumber).HasMaxLength(64);
+        builder.HasIndex(u => u.StudentNumber).IsUnique();
         builder.Property(u => u.Role).HasConversion<string>();
     }
 }

@@ -1,4 +1,5 @@
 using Application.Common.Interfaces;
+using Application.Features.Enrollments;
 using Application.Features.Enrollments.Dtos;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -32,13 +33,6 @@ public class ListEnrollmentsQueryHandler : IRequestHandler<ListEnrollmentsQuery,
 
         var enrollments = await query.ToListAsync(cancellationToken);
 
-        return enrollments.Select(e => new EnrollmentDto(
-            e.Id,
-            e.UserId,
-            e.User.Name,
-            e.CourseOfferingId,
-            e.SectionId,
-            e.Section.Name,
-            e.CreatedAt)).ToList();
+        return enrollments.Select(e => e.ToDto()).ToList();
     }
 }

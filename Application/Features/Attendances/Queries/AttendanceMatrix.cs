@@ -69,14 +69,16 @@ public class AttendanceMatrixQueryHandler
                 var session = sessions.FirstOrDefault(sess => sess.ModuleId == m.Id);
                 if (session == null) return "N/A";
 
+                if (!s.UserId.HasValue) return "Absent";
+
                 var att = attendances.FirstOrDefault(a =>
-                    a.SessionId == session.Id && a.UserId == s.UserId);
+                    a.SessionId == session.Id && a.UserId == s.UserId.Value);
                 return att?.Status.ToString() ?? "Absent";
             }).ToList();
 
             return new StudentRow(
-                s.UserId,
-                s.User.Name,
+                s.UserId ?? -s.Id,
+                s.User?.Name ?? s.ImportedName ?? $"Pending student {s.StudentNumber}",
                 s.SectionId,
                 s.Section.Name,
                 statuses.Cast<string?>().ToList());

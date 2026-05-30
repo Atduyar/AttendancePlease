@@ -8,6 +8,7 @@ public class User : IdentityUser<int>, IBaseAuditableEntity
 {
     public string Name { get; set; } = null!;
     public UserRole Role { get; set; }
+    public string? StudentNumber { get; set; }
     public DateTime CreatedAt { get; set; }
 
     public ICollection<CourseOfferingStaff> CourseOfferingStaffs { get; set; } = [];

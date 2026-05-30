@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260530173726_CourseOfferingStaffAccess")]
-    partial class CourseOfferingStaffAccess
+    [Migration("20260530201645_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -149,8 +149,13 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.HasIndex("CourseOfferingId", "UserId", "Scope", "SectionId")
-                        .IsUnique();
+                    b.HasIndex("CourseOfferingId", "UserId")
+                        .IsUnique()
+                        .HasFilter("\"Scope\" = 0");
+
+                    b.HasIndex("CourseOfferingId", "UserId", "SectionId")
+                        .IsUnique()
+                        .HasFilter("\"Scope\" = 1");
 
                     b.ToTable("CourseOfferingStaffs");
                 });
@@ -169,19 +174,29 @@ namespace Infrastructure.Migrations
                         .HasColumnType("TEXT")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
+                    b.Property<string>("ImportedName")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("SectionId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("UserId")
+                    b.Property<string>("StudentNumber")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("UserId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CourseOfferingId");
-
                     b.HasIndex("SectionId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("CourseOfferingId", "StudentNumber")
+                        .IsUnique();
 
                     b.ToTable("Enrollments");
                 });
@@ -368,6 +383,10 @@ namespace Infrastructure.Migrations
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("StudentNumber")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("INTEGER");
 
@@ -383,6 +402,9 @@ namespace Infrastructure.Migrations
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
+
+                    b.HasIndex("StudentNumber")
+                        .IsUnique();
 
                     b.ToTable("AspNetUsers", (string)null);
                 });
@@ -594,8 +616,7 @@ namespace Infrastructure.Migrations
                     b.HasOne("Domain.Entities.User", "User")
                         .WithMany("Enrollments")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("CourseOffering");
 

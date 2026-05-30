@@ -77,6 +77,13 @@ public static class ConfigureServices
         return services;
     }
 
+    public static async Task MigrateDatabaseAsync(this IServiceProvider serviceProvider)
+    {
+        using var scope = serviceProvider.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await dbContext.Database.MigrateAsync();
+    }
+
     public static async Task SeedRolesAsync(this IServiceProvider serviceProvider)
     {
         using var scope = serviceProvider.CreateScope();

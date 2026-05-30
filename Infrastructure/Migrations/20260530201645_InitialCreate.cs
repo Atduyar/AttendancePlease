@@ -34,6 +34,7 @@ namespace Infrastructure.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     Name = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
                     Role = table.Column<string>(type: "TEXT", nullable: false),
+                    StudentNumber = table.Column<string>(type: "TEXT", maxLength: 64, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
                     UserName = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
@@ -221,34 +222,6 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "CourseOfferingStaffs",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    CourseOfferingId = table.Column<int>(type: "INTEGER", nullable: false),
-                    UserId = table.Column<int>(type: "INTEGER", nullable: false),
-                    RoleTitle = table.Column<string>(type: "TEXT", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_CourseOfferingStaffs", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_CourseOfferingStaffs_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_CourseOfferingStaffs_CourseOfferings_CourseOfferingId",
-                        column: x => x.CourseOfferingId,
-                        principalTable: "CourseOfferings",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Modules",
                 columns: table => new
                 {
@@ -292,12 +265,51 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CourseOfferingStaffs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    CourseOfferingId = table.Column<int>(type: "INTEGER", nullable: false),
+                    SectionId = table.Column<int>(type: "INTEGER", nullable: true),
+                    UserId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Scope = table.Column<int>(type: "INTEGER", nullable: false),
+                    AccessLevel = table.Column<int>(type: "INTEGER", nullable: false),
+                    RoleTitle = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CourseOfferingStaffs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CourseOfferingStaffs_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CourseOfferingStaffs_CourseOfferings_CourseOfferingId",
+                        column: x => x.CourseOfferingId,
+                        principalTable: "CourseOfferings",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CourseOfferingStaffs_Sections_SectionId",
+                        column: x => x.SectionId,
+                        principalTable: "Sections",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Enrollments",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    UserId = table.Column<int>(type: "INTEGER", nullable: false),
+                    UserId = table.Column<int>(type: "INTEGER", nullable: true),
+                    StudentNumber = table.Column<string>(type: "TEXT", maxLength: 64, nullable: false),
+                    ImportedName = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
                     CourseOfferingId = table.Column<int>(type: "INTEGER", nullable: false),
                     SectionId = table.Column<int>(type: "INTEGER", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
@@ -310,7 +322,7 @@ namespace Infrastructure.Migrations
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_Enrollments_CourseOfferings_CourseOfferingId",
                         column: x => x.CourseOfferingId,
@@ -424,6 +436,12 @@ namespace Infrastructure.Migrations
                 column: "NormalizedEmail");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AspNetUsers_StudentNumber",
+                table: "AspNetUsers",
+                column: "StudentNumber",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "UserNameIndex",
                 table: "AspNetUsers",
                 column: "NormalizedUserName",
@@ -450,9 +468,23 @@ namespace Infrastructure.Migrations
                 column: "TermId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CourseOfferingStaffs_CourseOfferingId",
+                name: "IX_CourseOfferingStaffs_CourseOfferingId_UserId",
                 table: "CourseOfferingStaffs",
-                column: "CourseOfferingId");
+                columns: new[] { "CourseOfferingId", "UserId" },
+                unique: true,
+                filter: "\"Scope\" = 0");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CourseOfferingStaffs_CourseOfferingId_UserId_SectionId",
+                table: "CourseOfferingStaffs",
+                columns: new[] { "CourseOfferingId", "UserId", "SectionId" },
+                unique: true,
+                filter: "\"Scope\" = 1");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CourseOfferingStaffs_SectionId",
+                table: "CourseOfferingStaffs",
+                column: "SectionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CourseOfferingStaffs_UserId",
@@ -466,9 +498,10 @@ namespace Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Enrollments_CourseOfferingId",
+                name: "IX_Enrollments_CourseOfferingId_StudentNumber",
                 table: "Enrollments",
-                column: "CourseOfferingId");
+                columns: new[] { "CourseOfferingId", "StudentNumber" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Enrollments_SectionId",
