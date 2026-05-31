@@ -1,3 +1,4 @@
+using Application.Features.Users.Commands;
 using Application.Features.Users.Dtos;
 using Application.Features.Users.Queries;
 using Domain.Enums;
@@ -31,6 +32,16 @@ public class UsersController : BaseController
     public async Task<ActionResult<UserDto>> Get(int id, CancellationToken cancellationToken)
     {
         var user = await Mediator.Send(new GetUserQuery(id), cancellationToken);
+        return Ok(user);
+    }
+
+    [HttpPut("{id}/roles")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<UserDto>> UpdateRoles(int id, UpdateUserRolesCommand command, CancellationToken cancellationToken)
+    {
+        if (id != command.Id) return BadRequest();
+
+        var user = await Mediator.Send(command, cancellationToken);
         return Ok(user);
     }
 }
