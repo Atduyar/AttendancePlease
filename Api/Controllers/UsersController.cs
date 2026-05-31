@@ -44,4 +44,24 @@ public class UsersController : BaseController
         var user = await Mediator.Send(command, cancellationToken);
         return Ok(user);
     }
+
+    [HttpPut("{id}/profile")]
+    public async Task<ActionResult<UserDto>> UpdateProfile(int id, UpdateProfileCommand command, CancellationToken cancellationToken)
+    {
+        if (id != command.Id) return BadRequest();
+        if (!User.IsInRole("Admin") && id != CurrentUserId) return Forbid();
+
+        var user = await Mediator.Send(command, cancellationToken);
+        return Ok(user);
+    }
+
+    [HttpPost("{id}/change-password")]
+    public async Task<ActionResult> ChangePassword(int id, ChangePasswordCommand command, CancellationToken cancellationToken)
+    {
+        if (id != command.Id) return BadRequest();
+        if (!User.IsInRole("Admin") && id != CurrentUserId) return Forbid();
+
+        await Mediator.Send(command, cancellationToken);
+        return NoContent();
+    }
 }

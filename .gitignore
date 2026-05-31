@@ -485,3 +485,4 @@ $RECYCLE.BIN/
 Api/attendance.db
 Api/attendance.db-shm
 Api/attendance.db-wal
+core.*
