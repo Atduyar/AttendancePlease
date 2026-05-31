@@ -29,6 +29,15 @@ public class SessionsController : BaseController
         return CreatedAtAction(nameof(Get), new { id = dto.Id }, dto);
     }
 
+    [HttpPost("{id}/scan-token")]
+    public async Task<ActionResult<CreateSessionScanTokenResult>> CreateScanToken(int id, CancellationToken cancellationToken)
+    {
+        if (!await HasSessionAccessAsync(id, Domain.Enums.CourseOfferingStaffAccessLevel.Assistant, cancellationToken)) return Forbid();
+
+        var result = await Mediator.Send(new CreateSessionScanTokenCommand(id), cancellationToken);
+        return Ok(result);
+    }
+
     [HttpPost("{id}/close")]
     public async Task<ActionResult<SessionDto>> Close(int id, CancellationToken cancellationToken)
     {

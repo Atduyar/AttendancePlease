@@ -8,15 +8,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Attendances.Commands;
 
-public record StudentScanAttendanceCommand(int SessionId, int StudentUserId, AttendanceMethod Method) : IRequest<ScanResult>;
+public record StudentScanAttendanceCommand(string Token, int StudentUserId) : IRequest<ScanResult>;
 
-public record ScanResult(int AttendanceId, bool SectionSwitched, string Message);
+public record StudentScanAttendanceRequest(string Token);
+
+public record ScanResult(int AttendanceId, bool SectionSwitched, bool AlreadyRecorded, bool Success, string Message);
 
 public class StudentScanAttendanceCommandValidator : AbstractValidator<StudentScanAttendanceCommand>
 {
     public StudentScanAttendanceCommandValidator()
     {
-        RuleFor(x => x.SessionId).GreaterThan(0);
+        RuleFor(x => x.Token).NotEmpty();
         RuleFor(x => x.StudentUserId).GreaterThan(0);
     }
 }
@@ -24,24 +26,39 @@ public class StudentScanAttendanceCommandValidator : AbstractValidator<StudentSc
 public class StudentScanAttendanceCommandHandler : IRequestHandler<StudentScanAttendanceCommand, ScanResult>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IAttendanceScanTokenService _tokens;
 
-    public StudentScanAttendanceCommandHandler(IApplicationDbContext context)
+    public StudentScanAttendanceCommandHandler(IApplicationDbContext context, IAttendanceScanTokenService tokens)
     {
         _context = context;
+        _tokens = tokens;
     }
 
     public async Task<ScanResult> Handle(StudentScanAttendanceCommand request, CancellationToken cancellationToken)
     {
+        var token = _tokens.Validate(request.Token);
+        if (!token.IsValid || token.SessionId == null)
+            return Failed(token.Error ?? "Invalid QR code.");
+
         var session = await _context.Sessions
-            .AsNoTracking()
             .Include(s => s.Module)
-            .FirstOrDefaultAsync(s => s.Id == request.SessionId, cancellationToken);
+            .FirstOrDefaultAsync(s => s.Id == token.SessionId.Value, cancellationToken);
 
         if (session == null)
-            return new ScanResult(0, false, "Session not found");
+            return Failed("Attendance session was not found.");
 
         if (session.Status != SessionStatus.Open)
-            return new ScanResult(0, false, "Session is not open");
+            return Failed("Attendance has ended. This QR code is no longer accepting check-ins.");
+
+        if (session.SelectedMethod is not (AttendanceMethod.Qr or AttendanceMethod.QrWifi))
+            return Failed("This session is not accepting QR attendance.");
+
+        var existing = await _context.Attendances
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.SessionId == session.Id && a.UserId == request.StudentUserId, cancellationToken);
+
+        if (existing != null)
+            return new ScanResult(existing.Id, false, true, true, "Attendance already recorded.");
 
         var student = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.StudentUserId, cancellationToken);
         var studentNumber = student?.StudentNumber ?? StudentNumber.FromStudentEmail(student?.Email);
@@ -66,7 +83,7 @@ public class StudentScanAttendanceCommandHandler : IRequestHandler<StudentScanAt
                 && e.CourseOfferingId == session.Module.CourseOfferingId, cancellationToken);
 
         if (enrollment == null)
-            return new ScanResult(0, false, "Not enrolled in this course");
+            return Failed("You are not enrolled in this course.");
 
         bool sectionSwitched = false;
 
@@ -79,9 +96,9 @@ public class StudentScanAttendanceCommandHandler : IRequestHandler<StudentScanAt
         var attendance = new Attendance
         {
             UserId = request.StudentUserId,
-            SessionId = request.SessionId,
+            SessionId = session.Id,
             Status = AttendanceStatus.Present,
-            Method = request.Method,
+            Method = session.SelectedMethod == AttendanceMethod.QrWifi ? AttendanceMethod.QrWifi : AttendanceMethod.Qr,
             RecordedAt = DateTime.UtcNow
         };
 
@@ -89,9 +106,11 @@ public class StudentScanAttendanceCommandHandler : IRequestHandler<StudentScanAt
         await _context.SaveChangesAsync(cancellationToken);
 
         var message = sectionSwitched
-            ? "Attendance recorded. Section auto-switched."
+            ? "Attendance recorded. Your section was updated for this course."
             : "Attendance recorded successfully.";
 
-        return new ScanResult(attendance.Id, sectionSwitched, message);
+        return new ScanResult(attendance.Id, sectionSwitched, false, true, message);
     }
+
+    private static ScanResult Failed(string message) => new(0, false, false, false, message);
 }

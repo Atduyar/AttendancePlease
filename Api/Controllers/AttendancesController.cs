@@ -19,11 +19,22 @@ public class AttendancesController : BaseController
         return CreatedAtAction(nameof(Get), new { id = dto.Id }, dto);
     }
 
-    [HttpPost("scan")]
-    public async Task<ActionResult<ScanResult>> Scan(StudentScanAttendanceCommand command, CancellationToken cancellationToken)
+    [HttpGet("scan/preview")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ScanPreviewDto>> ScanPreview([FromQuery] string token, CancellationToken cancellationToken)
     {
-        var cmd = command with { StudentUserId = CurrentUserId };
-        var result = await Mediator.Send(cmd, cancellationToken);
+        int? studentUserId = User.Identity?.IsAuthenticated == true && User.IsInRole("Student")
+            ? CurrentUserId
+            : null;
+        var result = await Mediator.Send(new GetScanPreviewQuery(token, studentUserId), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("scan")]
+    [Authorize(Roles = "Student")]
+    public async Task<ActionResult<ScanResult>> Scan(StudentScanAttendanceRequest request, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new StudentScanAttendanceCommand(request.Token, CurrentUserId), cancellationToken);
         return Ok(result);
     }
 
