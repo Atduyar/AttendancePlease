@@ -33,18 +33,6 @@ public class ListSessionsQueryHandler : IRequestHandler<ListSessionsQuery, List<
 
         var sessions = await query.OrderByDescending(s => s.OpenedAt).ToListAsync(cancellationToken);
 
-        return sessions.Select(s => new SessionDto(
-            s.Id,
-            s.ModuleId,
-            s.Module.Title,
-            s.SectionId,
-            s.Section?.Name,
-            s.Status,
-            s.SelectedMethod,
-            s.OpenedByUserId,
-            s.OpenedByUser.Name,
-            s.OpenedAt,
-            s.ClosedAt,
-            s.CreatedAt)).ToList();
+        return sessions.Select(SessionDtoMapping.ToDto).ToList();
     }
 }

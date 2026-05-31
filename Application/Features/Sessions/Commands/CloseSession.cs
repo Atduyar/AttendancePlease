@@ -43,18 +43,6 @@ public class CloseSessionCommandHandler : IRequestHandler<CloseSessionCommand, S
             .Include(s => s.OpenedByUser)
             .FirstAsync(s => s.Id == session.Id, cancellationToken);
 
-        return new SessionDto(
-            result.Id,
-            result.ModuleId,
-            result.Module.Title,
-            result.SectionId,
-            result.Section?.Name,
-            result.Status,
-            result.SelectedMethod,
-            result.OpenedByUserId,
-            result.OpenedByUser.Name,
-            result.OpenedAt,
-            result.ClosedAt,
-            result.CreatedAt);
+        return SessionDtoMapping.ToDto(result);
     }
 }

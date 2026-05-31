@@ -34,7 +34,9 @@ public class AttendancesController : BaseController
     [Authorize(Roles = "Student")]
     public async Task<ActionResult<ScanResult>> Scan(StudentScanAttendanceRequest request, CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(new StudentScanAttendanceCommand(request.Token, CurrentUserId), cancellationToken);
+        var result = await Mediator.Send(
+            new StudentScanAttendanceCommand(request.Token, CurrentUserId, request.StudentLatitude, request.StudentLongitude),
+            cancellationToken);
         return Ok(result);
     }
 

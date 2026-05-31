@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Interfaces;
 using Application.Features.Sessions.Dtos;
 using Domain.Entities;
@@ -8,7 +9,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Sessions.Commands;
 
-public record OpenSessionCommand(int ModuleId, int? SectionId, AttendanceMethod SelectedMethod, int OpenedByUserId) : IRequest<SessionDto>;
+public record OpenSessionCommand(
+    int ModuleId,
+    int? SectionId,
+    AttendanceMethod SelectedMethod,
+    int OpenedByUserId,
+    double? Latitude,
+    double? Longitude,
+    double? RadiusMeters) : IRequest<SessionDto>;
 
 public class OpenSessionCommandValidator : AbstractValidator<OpenSessionCommand>
 {
@@ -16,6 +24,12 @@ public class OpenSessionCommandValidator : AbstractValidator<OpenSessionCommand>
     {
         RuleFor(x => x.ModuleId).GreaterThan(0);
         RuleFor(x => x.OpenedByUserId).GreaterThan(0);
+        When(x => x.Latitude.HasValue || x.Longitude.HasValue || x.RadiusMeters.HasValue, () =>
+        {
+            RuleFor(x => x.Latitude).NotNull().InclusiveBetween(-90.0, 90.0);
+            RuleFor(x => x.Longitude).NotNull().InclusiveBetween(-180.0, 180.0);
+            RuleFor(x => x.RadiusMeters).NotNull().GreaterThan(0);
+        });
     }
 }
 
@@ -51,6 +65,9 @@ public class OpenSessionCommandHandler : IRequestHandler<OpenSessionCommand, Ses
             SectionId = request.SectionId,
             Status = SessionStatus.Open,
             SelectedMethod = request.SelectedMethod,
+            Latitude = request.Latitude,
+            Longitude = request.Longitude,
+            RadiusMeters = request.RadiusMeters,
             OpenedByUserId = request.OpenedByUserId,
             OpenedAt = DateTime.UtcNow
         };
@@ -65,18 +82,6 @@ public class OpenSessionCommandHandler : IRequestHandler<OpenSessionCommand, Ses
             .Include(s => s.OpenedByUser)
             .FirstAsync(s => s.Id == session.Id, cancellationToken);
 
-        return new SessionDto(
-            result.Id,
-            result.ModuleId,
-            result.Module.Title,
-            result.SectionId,
-            result.Section?.Name,
-            result.Status,
-            result.SelectedMethod,
-            result.OpenedByUserId,
-            result.OpenedByUser.Name,
-            result.OpenedAt,
-            result.ClosedAt,
-            result.CreatedAt);
+        return SessionDtoMapping.ToDto(result);
     }
 }

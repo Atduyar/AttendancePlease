@@ -37,18 +37,6 @@ public class GetSessionQueryHandler : IRequestHandler<GetSessionQuery, SessionDt
 
         if (session == null) throw new NotFoundException(nameof(session), request.Id);
 
-        return new SessionDto(
-            session.Id,
-            session.ModuleId,
-            session.Module.Title,
-            session.SectionId,
-            session.Section?.Name,
-            session.Status,
-            session.SelectedMethod,
-            session.OpenedByUserId,
-            session.OpenedByUser.Name,
-            session.OpenedAt,
-            session.ClosedAt,
-            session.CreatedAt);
+        return SessionDtoMapping.ToDto(session);
     }
 }

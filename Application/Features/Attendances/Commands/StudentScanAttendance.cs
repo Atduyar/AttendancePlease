@@ -1,3 +1,4 @@
+using Application.Common.Helpers;
 using Application.Common.Interfaces;
 using Application.Features.Enrollments;
 using Domain.Entities;
@@ -8,9 +9,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Attendances.Commands;
 
-public record StudentScanAttendanceCommand(string Token, int StudentUserId) : IRequest<ScanResult>;
+public record StudentScanAttendanceCommand(
+    string Token,
+    int StudentUserId,
+    double? StudentLatitude,
+    double? StudentLongitude) : IRequest<ScanResult>;
 
-public record StudentScanAttendanceRequest(string Token);
+public record StudentScanAttendanceRequest(string Token, double? StudentLatitude, double? StudentLongitude);
 
 public record ScanResult(int AttendanceId, bool SectionSwitched, bool AlreadyRecorded, bool Success, string Message);
 
@@ -52,6 +57,20 @@ public class StudentScanAttendanceCommandHandler : IRequestHandler<StudentScanAt
 
         if (session.SelectedMethod is not (AttendanceMethod.Qr or AttendanceMethod.QrWifi))
             return Failed("This session is not accepting QR attendance.");
+
+        // GPS location verification
+        if (session.Latitude.HasValue && session.Longitude.HasValue && session.RadiusMeters.HasValue)
+        {
+            if (!request.StudentLatitude.HasValue || !request.StudentLongitude.HasValue)
+                return Failed("Location verification failed: student location is required for this session.");
+
+            var distance = Haversine.Distance(
+                session.Latitude.Value, session.Longitude.Value,
+                request.StudentLatitude.Value, request.StudentLongitude.Value);
+
+            if (distance > session.RadiusMeters.Value)
+                return Failed("Konum dogrulamasi basarisiz: sinif disindasiniz");
+        }
 
         var existing = await _context.Attendances
             .AsNoTracking()

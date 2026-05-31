@@ -11,6 +11,10 @@ public class Session : BaseEntity
     public SessionStatus Status { get; set; } = SessionStatus.Open;
     public AttendanceMethod SelectedMethod { get; set; }
 
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+    public double? RadiusMeters { get; set; }
+
     public int OpenedByUserId { get; set; }
     public DateTime OpenedAt { get; set; }
     public DateTime? ClosedAt { get; set; }

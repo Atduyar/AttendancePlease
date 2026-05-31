@@ -14,4 +14,7 @@ public record SessionDto(
     string OpenedByUserName,
     DateTime OpenedAt,
     DateTime? ClosedAt,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    double? Latitude,
+    double? Longitude,
+    double? RadiusMeters);
