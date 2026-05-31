@@ -1,5 +1,6 @@
 using Application.Common.Exceptions;
 using Application.Common.Interfaces;
+using Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,7 +22,10 @@ public record ModuleAttendanceSummary(
     string ModuleTitle,
     int OrderIndex,
     string? AttendanceStatus,
-    string? SectionName);
+    string? SectionName,
+    int? SessionId,
+    DateTime? SessionDate,
+    SessionStatus? SessionStatus);
 
 public class StudentAttendanceOverviewQueryHandler
     : IRequestHandler<StudentAttendanceOverviewQuery, StudentAttendanceOverview>
@@ -76,16 +80,19 @@ public class StudentAttendanceOverviewQueryHandler
                 m.Id,
                 m.Title,
                 m.OrderIndex,
-                attendance?.Status.ToString() ?? "Absent",
-                session?.Section?.Name);
+                attendance?.Status.ToString(),
+                session?.Section?.Name,
+                session?.Id,
+                session?.OpenedAt,
+                session?.Status);
         }).ToList();
 
         return new StudentAttendanceOverview(
             modules.Count,
-            attendances.Count(a => a.Status == Domain.Enums.AttendanceStatus.Present),
-            attendances.Count(a => a.Status == Domain.Enums.AttendanceStatus.Late),
-            modules.Count - attendances.Count,
-            attendances.Count(a => a.Status == Domain.Enums.AttendanceStatus.Excused),
+            attendances.Count(a => a.Status == AttendanceStatus.Present),
+            attendances.Count(a => a.Status == AttendanceStatus.Late),
+            attendances.Count(a => a.Status == AttendanceStatus.Absent),
+            attendances.Count(a => a.Status == AttendanceStatus.Excused),
             moduleSummaries);
     }
 }
