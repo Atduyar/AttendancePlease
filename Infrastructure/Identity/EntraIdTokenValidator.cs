@@ -27,6 +27,7 @@ public class EntraIdTokenValidator
         var clientId = _configuration["AzureAd:ClientId"]!;
         var tenantId = _configuration["AzureAd:TenantId"]!;
         var instance = _configuration["AzureAd:Instance"] ?? "https://login.microsoftonline.com/";
+        var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
         var v2Issuer = $"{instance}{tenantId}/v2.0";
         var v1Issuer = $"https://sts.windows.net/{tenantId}/";
         var wellKnownUrl = $"{v2Issuer}/.well-known/openid-configuration";
@@ -34,6 +35,10 @@ public class EntraIdTokenValidator
         var discoveryDocument = await OpenIdConnectConfigurationRetriever.GetAsync(
             wellKnownUrl, _documentRetriever, cancellationToken);
         var signingKeys = discoveryDocument.SigningKeys;
+
+        var clockSkew = string.Equals(environmentName, "Development", StringComparison.OrdinalIgnoreCase)
+            ? TimeSpan.FromHours(3)
+            : TimeSpan.FromMinutes(5);
 
         var validationParameters = new TokenValidationParameters
         {
@@ -46,7 +51,10 @@ public class EntraIdTokenValidator
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ClockSkew = TimeSpan.FromMinutes(5),
+            // Local development on student machines sometimes runs with a badly
+            // synchronized Windows clock, which makes fresh Entra tokens appear
+            // "not yet valid". Keep production strict and relax only in Development.
+            ClockSkew = clockSkew,
         };
 
         var handler = new JwtSecurityTokenHandler();
