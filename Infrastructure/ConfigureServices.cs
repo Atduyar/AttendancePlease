@@ -3,6 +3,7 @@ using Application.Common.Interfaces;
 using Domain.Entities;
 using Infrastructure.Identity;
 using Infrastructure.Persistence;
+using Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,8 @@ public static class ConfigureServices
 {
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddMemoryCache();
+
         var provider = configuration["Database:Provider"]?.ToLowerInvariant();
         var connectionString = configuration.GetConnectionString("DefaultConnection");
 
@@ -72,6 +75,8 @@ public static class ConfigureServices
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IAttendanceScanTokenService, AttendanceScanTokenService>();
+        services.AddSingleton<IAttendanceCheckInRateLimiter, AttendanceCheckInRateLimiter>();
+        services.AddScoped<IAttendanceQrCodeService, AttendanceQrCodeService>();
         services.AddScoped<EntraIdTokenValidator>();
         services.AddScoped<EntraIdUserProvisioner>();
 

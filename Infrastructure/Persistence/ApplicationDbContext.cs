@@ -24,6 +24,8 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, i
     public DbSet<Enrollment> Enrollments => Set<Enrollment>();
     public DbSet<Session> Sessions => Set<Session>();
     public DbSet<Attendance> Attendances => Set<Attendance>();
+    public DbSet<AttendanceSession> AttendanceSessions => Set<AttendanceSession>();
+    public DbSet<AttendanceRecord> AttendanceRecords => Set<AttendanceRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
