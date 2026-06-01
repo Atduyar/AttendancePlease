@@ -174,7 +174,7 @@ public class AttendanceSessionsController : ControllerBase
         }
 
         var frontendBaseUrl = ResolveFrontendBaseUrl();
-        var attendanceUrl = $"{frontendBaseUrl}/attend/{session.SessionToken}";
+        var attendanceUrl = $"{frontendBaseUrl}/attend/?sessionToken={Uri.EscapeDataString(session.SessionToken)}";
         var png = _qrCodeService.GeneratePng(attendanceUrl);
 
         return File(png, "image/png");
