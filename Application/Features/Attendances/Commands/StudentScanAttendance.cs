@@ -8,9 +8,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Attendances.Commands;
 
-public record StudentScanAttendanceCommand(string Token, int StudentUserId) : IRequest<ScanResult>;
+public record StudentScanAttendanceCommand(string Token, int StudentUserId, string? Pin = null) : IRequest<ScanResult>;
 
-public record StudentScanAttendanceRequest(string Token);
+public record StudentScanAttendanceRequest(string Token, string? Pin = null);
 
 public record ScanResult(int AttendanceId, bool SectionSwitched, bool AlreadyRecorded, bool Success, string Message);
 
@@ -27,11 +27,16 @@ public class StudentScanAttendanceCommandHandler : IRequestHandler<StudentScanAt
 {
     private readonly IApplicationDbContext _context;
     private readonly IAttendanceScanTokenService _tokens;
+    private readonly IAttendancePinService _pins;
 
-    public StudentScanAttendanceCommandHandler(IApplicationDbContext context, IAttendanceScanTokenService tokens)
+    public StudentScanAttendanceCommandHandler(
+        IApplicationDbContext context,
+        IAttendanceScanTokenService tokens,
+        IAttendancePinService pins)
     {
         _context = context;
         _tokens = tokens;
+        _pins = pins;
     }
 
     public async Task<ScanResult> Handle(StudentScanAttendanceCommand request, CancellationToken cancellationToken)
@@ -50,8 +55,11 @@ public class StudentScanAttendanceCommandHandler : IRequestHandler<StudentScanAt
         if (session.Status != SessionStatus.Open)
             return Failed("Attendance has ended. This QR code is no longer accepting check-ins.");
 
-        if (session.SelectedMethod is not (AttendanceMethod.Qr or AttendanceMethod.QrWifi))
+        if (session.SelectedMethod is not (AttendanceMethod.Qr or AttendanceMethod.QrWifi or AttendanceMethod.QrPin))
             return Failed("This session is not accepting QR attendance.");
+
+        if (session.SelectedMethod == AttendanceMethod.QrPin && !_pins.ValidatePin(session, request.Pin))
+            return Failed("The PIN is missing or no longer valid. Verify the current PIN before signing.");
 
         var existing = await _context.Attendances
             .AsNoTracking()
@@ -98,7 +106,12 @@ public class StudentScanAttendanceCommandHandler : IRequestHandler<StudentScanAt
             UserId = request.StudentUserId,
             SessionId = session.Id,
             Status = AttendanceStatus.Present,
-            Method = session.SelectedMethod == AttendanceMethod.QrWifi ? AttendanceMethod.QrWifi : AttendanceMethod.Qr,
+            Method = session.SelectedMethod switch
+            {
+                AttendanceMethod.QrWifi => AttendanceMethod.QrWifi,
+                AttendanceMethod.QrPin => AttendanceMethod.QrPin,
+                _ => AttendanceMethod.Qr
+            },
             RecordedAt = DateTime.UtcNow
         };
 

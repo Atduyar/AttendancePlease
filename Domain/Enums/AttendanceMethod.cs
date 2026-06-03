@@ -6,5 +6,6 @@ public enum AttendanceMethod
     Manual,
     Nfc,
     Qr,
-    QrWifi
+    QrWifi,
+    QrPin
 }

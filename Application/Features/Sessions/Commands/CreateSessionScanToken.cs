@@ -44,7 +44,7 @@ public class CreateSessionScanTokenCommandHandler : IRequestHandler<CreateSessio
                 [nameof(request.SessionId)] = ["Only open sessions can create attendance QR tokens."]
             });
 
-        if (session.SelectedMethod is not (AttendanceMethod.Qr or AttendanceMethod.QrWifi))
+        if (session.SelectedMethod is not (AttendanceMethod.Qr or AttendanceMethod.QrWifi or AttendanceMethod.QrPin))
             throw new Application.Common.Exceptions.ValidationException(new Dictionary<string, string[]>
             {
                 [nameof(request.SessionId)] = ["This session does not accept QR attendance."]

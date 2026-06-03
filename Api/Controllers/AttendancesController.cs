@@ -30,11 +30,19 @@ public class AttendancesController : BaseController
         return Ok(result);
     }
 
+    [HttpPost("scan/pin")]
+    [Authorize(Roles = "Student")]
+    public async Task<ActionResult<ScanPinValidationResult>> ValidateScanPin(ValidateScanPinRequest request, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new ValidateScanPinCommand(request.Token, request.Pin, CurrentUserId), cancellationToken);
+        return Ok(result);
+    }
+
     [HttpPost("scan")]
     [Authorize(Roles = "Student")]
     public async Task<ActionResult<ScanResult>> Scan(StudentScanAttendanceRequest request, CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(new StudentScanAttendanceCommand(request.Token, CurrentUserId), cancellationToken);
+        var result = await Mediator.Send(new StudentScanAttendanceCommand(request.Token, CurrentUserId, request.Pin), cancellationToken);
         return Ok(result);
     }
 

@@ -75,6 +75,7 @@ public static class ConfigureServices
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IAttendanceScanTokenService, AttendanceScanTokenService>();
+        services.AddScoped<IAttendancePinService, AttendancePinService>();
         services.AddSingleton<IAttendanceCheckInRateLimiter, AttendanceCheckInRateLimiter>();
         services.AddScoped<IAttendanceQrCodeService, AttendanceQrCodeService>();
         services.AddScoped<EntraIdTokenValidator>();

@@ -38,6 +38,15 @@ public class SessionsController : BaseController
         return Ok(result);
     }
 
+    [HttpGet("{id}/pin")]
+    public async Task<ActionResult<SessionPinDto>> GetPin(int id, CancellationToken cancellationToken)
+    {
+        if (!await HasSessionAccessAsync(id, Domain.Enums.CourseOfferingStaffAccessLevel.Assistant, cancellationToken)) return Forbid();
+
+        var result = await Mediator.Send(new GetSessionPinQuery(id), cancellationToken);
+        return Ok(result);
+    }
+
     [HttpPost("{id}/close")]
     public async Task<ActionResult<SessionDto>> Close(int id, CancellationToken cancellationToken)
     {

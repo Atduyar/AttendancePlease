@@ -65,12 +65,14 @@ public class GetScanPreviewQueryHandler : IRequestHandler<GetScanPreviewQuery, S
             .AnyAsync(a => a.SessionId == session.Id && a.UserId == request.StudentUserId.Value, cancellationToken);
 
         var sessionCanSign = session.Status == SessionStatus.Open
-            && session.SelectedMethod is AttendanceMethod.Qr or AttendanceMethod.QrWifi;
+            && session.SelectedMethod is AttendanceMethod.Qr or AttendanceMethod.QrWifi or AttendanceMethod.QrPin;
         var canSign = sessionCanSign && !alreadyRecorded;
         var message = alreadyRecorded
             ? "Attendance already recorded."
             : sessionCanSign
-                ? "Attendance is open. Confirm your identity, then sign below."
+                ? session.SelectedMethod == AttendanceMethod.QrPin
+                    ? "Attendance is open. Confirm your identity, verify the current PIN, then sign below."
+                    : "Attendance is open. Confirm your identity, then sign below."
                 : session.Status == SessionStatus.Open
                     ? "This session is not accepting QR attendance."
                     : "Attendance has ended. This QR code is no longer accepting check-ins.";
